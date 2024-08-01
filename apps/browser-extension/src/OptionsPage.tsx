@@ -50,6 +50,10 @@ export default function OptionsPage() {
     navigate("/notconfigured");
   };
 
+  const toggleSaveSelectedLists = () => {
+    setSettings((s) => ({ ...s, saveSelectedLists: !s.saveSelectedLists }));
+  };
+
   return (
     <div className="flex flex-col space-y-2">
       <Logo />
@@ -64,6 +68,18 @@ export default function OptionsPage() {
         {loggedInMessage}
       </div>
       <Button onClick={onLogout}>Logout</Button>
+      <hr />
+      <div className="flex gap-2">
+        <span className="my-auto">Save Selected Lists:</span>
+        <label className="switch">
+          <input
+            type="checkbox"
+            checked={settings.saveSelectedLists}
+            onChange={toggleSaveSelectedLists}
+          />
+          <span className="slider round"></span>
+        </label>
+      </div>
     </div>
   );
 }

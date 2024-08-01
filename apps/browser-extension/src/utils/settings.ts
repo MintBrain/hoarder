@@ -4,6 +4,8 @@ export interface Settings {
   apiKey: string;
   apiKeyId?: string;
   address: string;
+  saveSelectedLists: boolean;
+  latestLists: string;
 }
 
 export default function usePluginSettings() {
@@ -12,6 +14,8 @@ export default function usePluginSettings() {
     {
       apiKey: "",
       address: "",
+      saveSelectedLists: true,
+      latestLists: "",
     } as Settings,
   );
 

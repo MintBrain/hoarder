@@ -11,6 +11,7 @@ import {
 import { cn } from "../utils/css";
 import { api } from "../utils/trpc";
 import { Button } from "./ui/button";
+import usePluginSettings from "./../utils/settings";
 import {
   Command,
   CommandEmpty,
@@ -22,6 +23,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 
 export function ListsSelector({ bookmarkId }: { bookmarkId: string }) {
+  const { settings, setSettings } = usePluginSettings();
   const currentlyUpdating = useSet<string>();
   const [open, setOpen] = React.useState(false);
 
@@ -41,18 +43,53 @@ export function ListsSelector({ bookmarkId }: { bookmarkId: string }) {
       removeFromList(
         { bookmarkId, listId },
         {
-          onSettled: (_resp, _err, req) => currentlyUpdating.delete(req.listId),
+          onSettled: (_resp, _err, req) => {
+            currentlyUpdating.delete(req.listId);
+            if (settings.saveSelectedLists) {
+              updateLatestLists(req.listId, false);
+            }
+          },
         },
       );
     } else {
       addToList(
         { bookmarkId, listId },
         {
-          onSettled: (_resp, _err, req) => currentlyUpdating.delete(req.listId),
+          onSettled: (_resp, _err, req) => {
+            currentlyUpdating.delete(req.listId);
+            if (settings.saveSelectedLists) {
+              updateLatestLists(req.listId, true);
+            }
+          },
         },
       );
     }
   };
+
+  const updateLatestLists = (listId: string, add: boolean) => {
+    let latestLists = JSON.parse(settings.latestLists || "[]");
+    if (add) {
+      latestLists.push(listId);
+    } else {
+      latestLists = latestLists.filter((id: string) => id !== listId);
+    }
+    setSettings((s) => ({ ...s, latestLists: JSON.stringify(latestLists) }));
+  };
+  React.useEffect(() => {
+    if (settings.saveSelectedLists && settings.latestLists) {
+      const latestLists = JSON.parse(settings.latestLists);
+      latestLists.forEach((listId: string) => {
+        if (!existingListIds.has(listId)) {
+          addToList(
+            { bookmarkId, listId },
+            {
+              onSettled: (_resp, _err, req) => currentlyUpdating.delete(req.listId),
+            }
+          );
+        }
+      });
+    }
+  }, [settings, bookmarkId, existingListIds, addToList, currentlyUpdating]);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -81,7 +118,7 @@ export function ListsSelector({ bookmarkId }: { bookmarkId: string }) {
                     key={lastItem.id}
                     value={lastItem.id}
                     keywords={[lastItem.name, lastItem.icon]}
-                    onSelect={toggleList}
+                    onSelect={() => toggleList(lastItem.id)}
                     disabled={currentlyUpdating.has(lastItem.id)}
                   >
                     <Check

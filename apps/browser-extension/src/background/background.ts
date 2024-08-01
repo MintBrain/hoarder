@@ -10,7 +10,11 @@ function checkSettingsState(settings: Settings) {
   if (settings?.address) {
     registerContextMenu();
   } else {
-    chrome.contextMenus.remove(OPEN_HOARDER_ID);
+    chrome.contextMenus.remove(OPEN_HOARDER_ID, () => {
+      if (chrome.runtime.lastError) {
+        console.error(chrome.runtime.lastError);
+      }
+    });
   }
 }
 
@@ -18,10 +22,16 @@ function checkSettingsState(settings: Settings) {
  * Registers a context menu button to open a tab with the currently configured hoarder instance
  */
 function registerContextMenu() {
-  chrome.contextMenus.create({
-    id: OPEN_HOARDER_ID,
-    title: "Open Hoarder",
-    contexts: ["action"],
+  // Check if the context menu already exists
+  chrome.contextMenus.update(OPEN_HOARDER_ID, {}, () => {
+    if (chrome.runtime.lastError) {
+      // If the context menu does not exist, create it
+      chrome.contextMenus.create({
+        id: OPEN_HOARDER_ID,
+        title: "Open Hoarder",
+        contexts: ["action"],
+      });
+    }
   });
 }
 
